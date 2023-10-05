@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <style>
+    body {
+      max-width: 60ch;
+      margin: 0 auto;
+      line-height: 1.5;
+      font-size: 1.25rem;
+    }
+  </style>
+  <body>
+    <select name="mbti" id="mbti">
+      <option value="INTJ">INTJ</option>
+      <option value="INFJ">INFJ</option>
+      <option value="ISFJ">ISFJ</option>
+      <option value="ISFP">ISFP</option>
+      <option value="INTP">INTP</option>
+      <option value="INFP">INFP</option>
+      <option value="ENTJ">ENTJ</option>
+      <option value="ENTP">ENTP</option>
+      <option value="ESTP">ESTP</option>
+      <option value="ESTJ">ESTJ</option>
+      <option value="ESFP">ESFP</option>
+      <option value="ESFJ">ESFJ</option>
+      <option value="ENFP">ENFP</option>
+    </select>
+    <div id="output"></div>
+  </body>
+  <script>
+    // Rules:
+    // 1. EXXX types -> leading function is extroverted. Inverse is true for IXXX Types
+    // 2. XSXX and XNXX share the same dom and inf type. Their aux and terts are swapped
+    // 3. Letters not the same? reversed stack order
+    // 4. J and P do not share the same function sets, and the dom/aux, tert/inf pairs are inverted.
+    const cogStack = {
+      ENTP: ["ne", "ti", "fe", "si"],
+      ENTJ: ["te", "ni", "se", "fi"],
+      ENFJ: ["fe", "ni", "se", "ti"],
+      ENFP: ["ne", "fi", "te", "si"],
+      ESTJ: ["te", "si", "ne", "fi"],
+      ESTP: ["se", "ti", "fe", "ni"],
+      ESFJ: ["fe", "si", "ne", "ti"],
+      ESFP: ["se", "fi", "te", "ni"],
+
+      INTP: ["ti", "ne", "si", "fe"],
+      INTJ: ["ni", "te", "fi", "se"],
+      INFJ: ["ni", "fe", "ti", "se"],
+      INFP: ["fi", "ne", "si", "te"],
+      ISTJ: ["si", "te", "fi", "ne"],
+      ISTP: ["ti", "se", "ni", "fe"],
+      ISFJ: ["si", "fe", "ti", "ne"],
+      ISFP: ["fi", "se", "ni", "te"],
+    };
+    const dominant = {
+      ne: "Ne: So, what you are REALLY saying, even though you’re disguising it behind bullshit, is this. Do you want to know what writing desks and ravens have in common? Are you sure that this is the right decision? Because I have five other possible interpretations, and it would be a shame not to consider them all. I simply know how this works, and what you are really up to. Let’s talk about ideas! I want to tell you mine and hear yours! I know this idea doesn’t seem related to our discussion, but I think it ties in. I can sum up our concept in a metaphor. I can think of five different things at once! I can pick up your facial expressions and accent without even thinking about it. Let me tell you a story…",
+      ni: "Ni: No, I haven’t learned this before. I just know how to do it, that’s all. Let me guess what that means… am I right? Yes! I knew it! You can’t ask me to stop thinking about the future; I think about it all the time! That person is going to do that, and this will happen as a result. I am not wrong. You wait and see. (Told you!) I don’t like this, it didn’t happen the way I anticipated it would! No, I don’t want to change my plan at the last minute! How can I fix this? Where did I go wrong? I have a creative way to explain this process to you! Interpreting symbolism comes easily to me. Visualizing my goals, and my future, makes me happy and energizes me! I can see where I want to be, and where I am, and come up with each step necessary to reach my dreams. ",
+      fe: "Fe: I am warm and enjoy taking care of people. I consider how decisions will impact everyone involved. Is there anything I can get you, to make you feel more comfortable? I can’t be with people who don’t treat others with respect. I want to acknowledge not only what each of you has done in the group as individuals, but also talk about what we can do, or have done, together! You did an awesome job with that; you are so talented. I don’t approve of what you are doing, because it’s inappropriate and will have a bad impact on others, but I am willing to talk it through and will accept your apology, without any bad feelings. I feel so at ease offering affirmation, and am deeply hurt when others don’t do the same. I want everyone to be happy, but am not afraid to say what I feel if I need to.",
+      fi: "Fi: I know that this is good, and that is bad. I know that you’re not who you say you are. I don’t need to focus on that particular idea, because it is less important than this other idea or belief. I want to focus on what is important, and I can see the measure of importance of everything in my life: people, causes, thoughts, actions, and feelings. Does this belief conflict with mine? Do I think this action is wrong? If so, I won’t do it. I know what I believe and what is worth believing in. Please, let me have some time to mull over this life-altering decision. I don’t want to make the wrong choice. I feel strong and confident in who I am, and what I believe. I have total faith in you. I know what you need, and will stand up for you when you need me to. I am good at protecting others and showing patience in mediating between them.",
+      te: "Te: Here is the plan, and the steps needed to accomplish it. I can learn anything complicated. This is your responsibility, and I expect a status report. I measure success by objective means (best-seller lists, stock reports, etc). I have a second plan if the first one fails. Anything can be organized for greater results. This isn’t working right; let me fix it. Here is how you can accomplish your goals. Controlling one’s emotions is important. It takes an hour and ten minutes to get there, with 30 minutes allotment for a traffic jam. We can comfortably do this in two weeks, yes. These are the facts, and if something doesn’t measure the facts, I intend to challenge it.",
+      ti: "Ti: I don’t need to use my emotions to fix this problem, thanks. I know how this machine works. Let me take it apart and put it back together for you. That doesn’t seem logical. The facts of the situation are unimportant; we can solve this, though it might seem impossible. There is a way around every problem. I can give you a two word answer to your question, and those two words will solve everything. The fewer words used, the better. Most explanations are too long-winded and technical, and could easily be simplified. Let me hear the idea or new data; I’m going to analyze and criticize it, and if it doesn’t work, I’m going to throw it out. Come on, you know my impartiality is sexy. Have you ever seen me overreact to anything? No!",
+      se: "Se: Experiences are the stuff of life. I want to go snowboarding! Skydiving! Drive a racecar! Give me an adrenaline rush, and I’m fabulous. Okay, what’s up? I saw your eye twitch. That means you’re upset, but about what? Oh, I can leap in there and do this, no problem! See? It’s easy! You need a part time lion tamer? I’m sure I can learn it in no time. Okay, so here are the sixteen awesome things we can do in this theme park. Which one first? Look, you do that, I can hold this, and keep track of the kids, and check my Blackberry, and call Gary back all at the same time. You know, someone could make a lot of money if they—oh, what the heck, I’ll just do it. While you were standing there gaping, I saved the kid from the bus. I want to try that out; I think my body can take it, and it’ll be fun to find out. I’m going to say this, and see what people do…",
+      si: "Si: I know how this works, how it was last week, and how I want it to be in the future. If knitting in that way helped the other person to create that scarf, I feel sure that I can do the same thing by learning the same stitch. I feel happiest when I hold tight to the things that are truly important and lasting in life, such as family, friends, and often, my faith. I find that interesting, but it doesn’t match my memories of what happened. Can you give me more details, so I can decide whether or not to accept it? I know if something or someone is different from how they used to be, and can tell you exactly what has altered. I highly value my past experiences, and find it hard to forget or move past things. I really love participating in local events, family traditions, and cultural things, because it makes me feel like I am part of a living past. I enjoy routine and like things to be predictable.",
+    };
+    const auxillary = {
+      ne: "Ne: Your life has so much potential! I can see many different possibilities for your future! Let me share them with you! There is more than one way to look at this situation. It would be a shame not to talk about them all. That’s a great idea, but what about this? Or this? Or that? Let’s discuss and consider them all. I have an analogy that fits this situation, but you’ll have to hang in there to the end, because at first it will sound random. I promise, it isn’t! Let me paint the big picture for you! Let’s try this, it’s new and it’s crazy but it might work! Yes, I thought you might make that decision / that this would happen. Excuse me, I need to write a story…",
+      ni: "Ni: I feel very strongly that this is about to happen, and I intend to use my foreknowledge to do something about it. No, I am not surprised this happened. I knew it would. I am not going to support that company, because they will go under in six months. This person is not worth my time, because they are dishonest and I know they will betray me. Last night, I didn’t know what to do… but now, suddenly, the answer is staring me in the face! I know what to do to accomplish everything! You can’t fool me, because I can see your true self. People tell me that my advice is profound and insightful. I sometimes hide what I know, when I know it, because it freaks people out.",
+      fe: "Fe: I know what is important to you, and can support you in it, provided it doesn’t hurt others. I’m not always comfortable taking sides. Can we talk about this and reach a compromise that keeps everyone happy? I don’t want to upset people, and I can easily fit into a group and make everyone feel wanted and involved. Your emotions can influence mine, so I am careful not to let too many people in. I want to take care of you, and protect you. You are so talented. I hope you know that, and how much I like you. I’m happy to serve, but feel better when I get how I feel off my chest and out into the open.",
+      fi: "Fi: I am happiest when staying true to what I believe and what I want for my life. I know what I want, what beliefs and ideals motivate me, and how I feel about something. This is good, and that is bad. I know you’re only pretending, because I can see right through you. How does this new belief measure up against my life, my goals, and my core values? I believe no one should enforce morality; it should be a conscious choice we make. I care very much about you. I am loyal to you. I have great enthusiasm and many feelings toward you, but I show it through actions rather than words. You don’t have to say anything for me to be able to connect to and understand your meaning. I am okay with silent affection.",
+      te: "Te: This isn’t working right, so let’s talk about how to fix it, and I’ll correct it. I know how long this task will take; I am currently on step four and will be finished in another hour, if you want to come get it. I am following the plan, from Point A to Point B. These are the steps you need to take to accomplish your goals. I am totally comfortable with word counts, hour limits, and deadlines, and have no problem meeting them. I can organize my time to accomplish everything I want to accomplish in a day. Here’s your shopping list. Give me the information and come back in an hour; I will categorize it into an easy to follow format so that everyone knows where we are in the project and what is expected of them. I have no problem controlling my impulses and putting aside my emotions to get things done.",
+      ti: "Ti: Hmm, give me a second… okay, I know what to do. I know how this works and how to fix it. I just analyzed it from six different angles in my head and feel comfortable with diving right in. I can take this situation or problem apart and reassemble it. That sounds illogical, so I’m going to ignore it. If I have time, I’ll argue with it. Look, cut the crap and get to the point. THIS is the problem and THIS is how we fix it. Did you enjoy my three word answer? It really annoys me when people take too long to explain something, because it’s easy for me to sum it up in a few words. No, I understand the system, I have it, let’s start in on it and get things done! Hop to it! Chop chop!",
+      se: "Se: I could be doing one of six things right now, and I’m bored just standing here, so let’s go out and do something! I want to go bike riding again this weekend; there’s this gorgeous place in the mountains that you have to see to believe, but it’s a six mile ride so pack your gear. Uh oh, she’s mad. I saw her facial expression change for a second, and that’s never a good sign. I want to try out lots of things, and test my body to see what it can do. I can learn to do this quickly, and then I want to help you learn it. Come with me! Don’t just stand there, we can do this! Right now, I’m chilling in the backyard with a glass of tea and watching the light move through the trees, but later I want to go rock climbing. I can’t wait! It’s going to be awesome! I can trust what I have experienced first-hand.",
+      si: "Si: The last time I tackled this project, using this technique worked, so I feel confident in my ability to succeed using the same technique. This restaurant is laid out different than it was the last time I was here; those tables were on the patio, and they had red curtains, not green. I’m happy to provide you with the details of why I am making this decision. I recognize this street, so I know where to turn! This holiday is meaningful to me, because it allows me to connect to my family or my culture. I’m disappointed if we can’t celebrate it together every year. If we’re going to do this project, let’s do research to see how others have done it before we start. I like to reflect on my own past experiences when making decisions in the present, and believe I can learn from others’ mistakes.",
+    };
+
+    const tertiary = {
+      ne: "Ne: Oh, that new idea is interesting! I’d like to talk about it with you! But I need to be somewhere in twenty minutes, so let’s keep it on track as much as we can. It feels like you are not tied to reality with this idea; can we pull it back to something tangible? I think I have several ideas as to what really happened back there. This discovery may help me discover my greater purpose in life. I suspected this was going to happen…",
+      ni: "Ni: I love the silence. It allows me to think about my future, and what I want to accomplish. I like to come up with new ways of doing or seeing things. Don’t tell anyone, but I like symbolism, archetypes, and mysteries. I find them interesting. I sometimes feel like I know what is going to happen, before it happens… and I’m usually right. I don’t know how I knew that about you; I just did. I can visualize a goal, and won’t stop until I turn it into a reality. I trust my insights more in my creativity than in life, but am learning to use my random moments of foreknowledge to create long-term goals.",
+      fe: "Fe: I find it easy to connect to people and make friends. I’m good at smoothing things over between people, so we can accomplish things together. You’re really doing a good job with that; you’re a natural at this, you know! I’m glad you feel comfortable with me. I like you too. I know how you feel, and I’m sorry this is happening to you. Tell me how I can help, so I’m not just sad on your behalf. I feel like I need to take care of you, and be responsible for you. If you mess with someone I love, I will kick your butt; do you hear me? Hey, do you want to talk about how you feel? I can share some stuff about myself, too, if it makes you feel better. People find me friendly and enthusiastic.",
+      fi: "Fi: I put a lot of time and energy into activities that are important to me. I want those activities to be meaningful in some way—I want to volunteer, learn to teach others, apply my knowledge, or write on important social issues. I have a strong sense of what is good or bad. I want things to come out right, and will work toward that end. I am loyal to a few causes and people, because my time is valuable so I prioritize. I choose what beliefs feel the most authentic to me. I compare all my decisions against my strong beliefs of right and wrong.",
+      te: "Te: Look, I organized all my movies by alphabetical order or time period! My socks are sorted by colors or fabrics. I enjoy having things organized, but have to focus to set up the system. I know this isn’t working right, and I want to fix it. I suspect this project will take me another couple of hours, but I’m going to give myself extra time just in case. Look, either you can prove aliens exist or you can’t, and if you can’t, they probably don’t exist. Let’s talk about this idea to see if it’s even possible, on a factual level. This is why I made my decision. I want to have a plan and follow through with it, but sometimes I forget what time it is or what the steps in the plan were. I probably shouldn’t improvise answers as much.",
+      ti: "Ti: I am interested in learning how to make things run more smoothly and efficiently. Please be as clear and concise in your explanation as possible, so the message isn’t lost in theatricality. I’m sorry, but I see a logical inconsistency in the statement you just made; may I point it out to you so we can talk about it? I really love thinking about my ideas (Ni) and experiences (Si), and analyzing them to see what meaning they hold for me, and why. I’m good at putting a name to what is happening around me.",
+      se: "Se: I like expensive stuff and I always make room for it in my life. I’m taking you to the best restaurant tonight; yes, it’s expensive, but the food is to die for. I don’t like that painting; it’s hideous. It may take me a moment, but I’ll get the hang of things quickly and you’ll never know I haven’t been doing this for years. I never trip over anything, because I know where everything is. Let’s do something fun this weekend, something physical. I want to feel the burn in my legs! I don’t mind taking risks, because it’s fun to get an adrenaline rush. I’m not going to lose this game; if I play, I play to win. It takes hard work to look this good.",
+      si: "Si: I love to revisit things that have given me joy in the past. Going to the same museums, watching the same favorite old movies, and thinking about an old idea is a lot of fun for me. I’d actually rather go to the tea shop again than try out a new hot spot. I find history interesting. Oh, do you want to know everything I learned about Ancient Egypt / the Klingon Conflict? I have all the details right here! I have a box of Star Wars memorabilia in my closet.  Oh, I remember that smell… this tastes like my grandmother’s cookies… no, that’s not how “they’re” is spelled. I like familiar things and when I am upset, they comfort me.",
+    };
+
+    const inferior = {
+      ne: "Ne: I know that these two things are connected, but I’m not sure how. I’m sorry, but that idea is completely unrealistic. Can we stick to one idea, please? Hmm, the last time I thought something might happen, it happened; so maybe I can trust my intuition this time, too.",
+      ni: "Ni: Though I care more about what’s happening in my life right now, I want to have a good future. I haven’t forgotten my dreams, and I’ll figure out how to make them a reality one of these days. I like thinking about my future life and, although it’s hard, I can learn to put aside immediate experiences if I know the long-term goal is worth the wait! I feel optimistic about the future, and sometimes out of the blue, know how to do something that I have never tried doing before. I’m not sure how, but I knew that person would do that.",
+      fe: "Fe: I want to help you, but I’m not sure what to say to make you feel better. I feel protective of you, and I don’t want to hurt your feelings, but sometimes I do. I would never admit it in a million years, but I care how you see me and I need your encouragement. The more I respect you, the more hurt I am if you ignore or belittle me. That being said… I really don’t understand why you’re making such emotional decisions!",
+      fi: "Fi: My beliefs are very strong, but I spend little time thinking about them. Many of them are tied to my feelings, and I’m not comfortable dwelling on my emotions. It’s easier to adopt a simple, straightforward moral code and stick to it without deviation. I don’t see the point in determining which causes are more important than others. I have a tendency to think that my values are right for others. I really want to do something greater than myself, and am fiercely loyal to what I believe in but I would rather donate time, energy, and money than emotional support. It’s hard for me to be loyal to people whose decisions I profoundly disagree with. I need to respect you before I can emotionally support you in those times. Slowly, I am learning to be more tolerant and not see the world as black and white.",
+      te: "Te: I know I had that information before, but I’m not sure where it is. I long to be efficient, but I can’t seem to pull it off. I do like organizing my books, though; they have their own system! I don’t like schedules, but they help me stay on track. Oh, this is wrong! I know I’m forgetting something! I should be more organized! I like to be efficient, and try to use my time wisely, and I enjoy having some sense of control over my life and environment.",
+      ti: "Ti: I want to be objective in our conversation, but I’m having a hard time not feeling upset that you have shut me out. I don’t feel comfortable discussing this person like they are a thing or a problem to be solved. How can you be so detached? That feels heartless to me! I want to get things right, so I will study this until I understand it, then take what I know and use it to help others reach their own understanding. I’m okay with calling a problem a problem, and willing to analyze it.",
+      se: "Se: My awareness of my environment gives me “clues” about other people, which feed my intuition, but the less I pay attention to the people and things around me, the more wrong my conclusions are. I sometimes feel overwhelmed with too much sensory information all at once; can we put away the disco ball and turn the music down? I wasn’t sure I would like that scary ride, but I did! I’m going again! I really want to see my dreams become real, and I’m willing to do all the hard work required to make it so. I like learning things that help me be stronger and more fit.",
+      si: "Si: I haven’t the faintest idea where that paper went. I had it five minutes ago. No, I didn’t remember that it’s your birthday… but I wanted to remember! I did a bunch of research on the Tudor period, but I need to dig up my notes for the details. I don’t want to talk about the past; it hurts too much. Show me how you did it, and then I’ll try it. I’m not a big fan of Christmas family gatherings, but I kind of miss the wonder of Christmas as a child. Don’t tell anyone, but sometimes I long for a normal life and a white picket fence. How… how did I remember the name of that fictional character in the cartoon I used to watch when I was a kid? That’s random!",
+    };
+
+    function getStack(mbti) {
+      const dom = cogStack[mbti][0];
+      const aux = cogStack[mbti][1];
+      const tert = cogStack[mbti][2];
+      const inf = cogStack[mbti][3];
+      const stack = [
+        dominant[dom],
+        auxillary[aux],
+        tertiary[tert],
+        inferior[inf],
+      ];
+      let renderStack = stack.map((item) => {
+        const para = document.createElement("p");
+        para.innerText = item;
+        // document.body.appendChild(para);
+      });
+      return stack;
+    }
+
+
+    
+
+    const e = document.getElementById("mbti");
+    e.addEventListener("change", function (event) {
+        console.log("Info for: " + event.target.value);
+        document.getElementById("output").innerHTML = getStack(event.target.value);
+    });
+  </script>
+</html>
